@@ -11,7 +11,6 @@ import wsd.spacy_utils as su
 import wsd.word_sense_disambiguation as w
 from wsd.masked_language_model import UnmaskResult
 
-su._PIPELINE_MODELS["en"] = "en_core_web_lg"  # CPU pipeline; entity linking is skipped below
 files = sorted(glob.glob(sys.argv[1]))
 limit = int(sys.argv[3]) if len(sys.argv) > 3 else 10**9
 captured: list[str] = []
