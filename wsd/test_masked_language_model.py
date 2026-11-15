@@ -38,6 +38,15 @@ def test_load_model():
     assert components.tokenizer.mask_token is not None
 
 
+def test_load_model_uses_fp32_off_gpu():
+    """The published checkpoints are saved in bf16, which CPUs without native bf16 emulate many times slower."""
+    import torch
+
+    components = load_model()
+    if components.device != "cuda":
+        assert components.model.dtype == torch.float32
+
+
 def test_unmask_token_returns_answer_letter():
     """Single unmask call returns a 128-wide probs tensor and an answer letter."""
     components = load_model()
