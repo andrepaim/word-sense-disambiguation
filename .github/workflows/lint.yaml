@@ -24,7 +24,7 @@ jobs:
           activate-environment: true
 
       - name: Install dependencies
-        run: uv pip install ".[dev,web]"
+        run: uv sync --locked --extra dev --extra web
 
       - name: Lint code
         run: uv run ruff check .

@@ -1,0 +1,17 @@
+name: Latest dependencies
+
+# Test and Accuracy pin their dependencies (uv.lock) and the WordNet image. This reruns both against the newest
+# releases weekly, so a breaking upstream release shows up here instead of in someone's pull request.
+# Refresh the pins with `uv lock --upgrade` (and the image digest in test.yaml) once this passes.
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # Mondays 06:00 UTC
+  workflow_dispatch:
+  pull_request:
+    paths: [ .github/workflows/latest-dependencies.yaml ]
+
+jobs:
+  latest:
+    uses: ./.github/workflows/test.yaml
+    with:
+      dependencies: latest
