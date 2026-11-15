@@ -4,8 +4,9 @@ A Python implementation of word sense disambiguation using ModernBERT and spaCy 
 This tool identifies the correct meaning of ambiguous words in context by leveraging dictionary definitions and
 transformer-based language models.
 
-This is designed for synthetic data generation, and can run at about 1 sentence per second.
-If this needs to be done in production, a word-vector search approach would be much more efficient.
+It was designed for synthetic data generation. With the default model (`sign/Ettin-150m-WSD`), the server answers
+a typical sentence in about 0.1-0.25 s on CPU, and the offline batch pipeline processes 380-420 sentences/s per
+H100 (see [Throughput](#throughput)).
 
 ![Example of word sense disambiguation](assets/wsd-example.png)
 
@@ -176,7 +177,8 @@ in Python per chunk, and tokenization done before any GPU work. `unmask_token_ba
 process on the same GPU costs the model 16%; CUDA MPS (`wsd.batch` starts it) cuts that to 8%, and two
 persistent spaCy workers per GPU keep spaCy from pacing the pipeline.
 
-leaves the model's throughput unchanged next to it (3,342 vs 3,311 prompts/s), so it stays off.
+Also measured: running spaCy's transformer pipeline in mixed precision makes spaCy ~20% faster but
+leaves the model's throughput unchanged next to it (3,342 vs 3,311 prompts/s), so the option was removed.
 
 What did not work:
 fp8 dynamic quantization (torchao) is +16% speed for a collapse to 67% on SemEval; a spaCy prefetch *thread*
