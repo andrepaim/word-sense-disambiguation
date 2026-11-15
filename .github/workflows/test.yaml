@@ -6,10 +6,18 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  # latest-dependencies.yaml reruns both jobs weekly against the newest packages and WordNet image.
+  workflow_call:
+    inputs:
+      dependencies:
+        description: "'locked' installs uv.lock and the pinned WordNet image; 'latest' resolves everything fresh"
+        type: string
+        default: locked
 
 
 # Tests need a WordNet API. Repositories that set the WORDNET_URL variable use that server; anywhere else
 # (e.g. forks) the public API image runs as a service container. An empty image skips the service.
+# The image is pinned (ghcr.io/sign/wn:latest as of 2026-11-15) so the accuracy check sees fixed data.
 env:
   WORDNET_URL: ${{ vars.WORDNET_URL || 'http://127.0.0.1:8000' }}
 
@@ -21,7 +29,7 @@ jobs:
 
     services:
       wordnet:
-        image: ${{ vars.WORDNET_URL == '' && 'ghcr.io/sign/wn:latest' || '' }}
+        image: ${{ vars.WORDNET_URL == '' && (inputs.dependencies == 'latest' && 'ghcr.io/sign/wn:latest' || 'ghcr.io/sign/wn@sha256:271d8418036da5bde1c02bfa703b7b480455e5af8c206f71ae1aa590f3bdd19f') || '' }}
         ports:
           - 8000:8080
 
@@ -35,14 +43,20 @@ jobs:
           enable-cache: true
           activate-environment: true
 
-      - name: Install dependencies
-        run: uv pip install ".[dev,web,benchmark]"  # benchmark: wn, imported by training.train via wsd.benchmark
+      # benchmark: wn, imported by training.train via wsd.benchmark
+      - name: Install locked dependencies
+        if: inputs.dependencies != 'latest'
+        run: uv sync --locked --extra dev --extra web --extra benchmark
+
+      - name: Install the latest dependencies
+        if: inputs.dependencies == 'latest'
+        run: uv pip install --upgrade ".[dev,web,benchmark]"
 
       - name: Wait for the WordNet API
         run: timeout 120 bash -c 'until curl -sf "$WORDNET_URL/health" > /dev/null; do sleep 2; done'
 
       - name: Test Code
-        run: uv run pytest -n auto --dist loadscope
+        run: uv run --no-sync pytest -n auto --dist loadscope
 
   # The default model must keep its accuracy on the WordNet held-out slice. CI runs on the CPU, in fp32: 75.78%
   # for sign/Ettin-150m-WSD (wsd/README.md; 75.9% published, measured in bf16 on GPU). The threshold leaves 4
@@ -54,7 +68,7 @@ jobs:
 
     services:
       wordnet:
-        image: ${{ vars.WORDNET_URL == '' && 'ghcr.io/sign/wn:latest' || '' }}
+        image: ${{ vars.WORDNET_URL == '' && (inputs.dependencies == 'latest' && 'ghcr.io/sign/wn:latest' || 'ghcr.io/sign/wn@sha256:271d8418036da5bde1c02bfa703b7b480455e5af8c206f71ae1aa590f3bdd19f') || '' }}
         ports:
           - 8000:8080
 
@@ -68,11 +82,16 @@ jobs:
           enable-cache: true
           activate-environment: true
 
-      - name: Install dependencies
-        run: uv pip install ".[benchmark]"
+      - name: Install locked dependencies
+        if: inputs.dependencies != 'latest'
+        run: uv sync --locked --extra benchmark
+
+      - name: Install the latest dependencies
+        if: inputs.dependencies == 'latest'
+        run: uv pip install --upgrade ".[benchmark]"
 
       - name: Wait for the WordNet API
         run: timeout 120 bash -c 'until curl -sf "$WORDNET_URL/health" > /dev/null; do sleep 2; done'
 
       - name: Benchmark the held-out slice
-        run: uv run python -m wsd.benchmark --split eval --min-accuracy 0.757
+        run: uv run --no-sync python -m wsd.benchmark --split eval --min-accuracy 0.757
