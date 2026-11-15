@@ -44,8 +44,9 @@ jobs:
       - name: Test Code
         run: uv run pytest -n auto --dist loadscope
 
-  # The default model must keep its published accuracy on the WordNet held-out slice (wsd/README.md: 75.9% for
-  # sign/Ettin-150m-WSD). Update the threshold together with the model or the published number.
+  # The default model must keep its accuracy on the WordNet held-out slice. CI runs on the CPU, in fp32: 75.78%
+  # for sign/Ettin-150m-WSD (wsd/README.md; 75.9% published, measured in bf16 on GPU). The threshold leaves 4
+  # examples for CPU-to-CPU rounding. Update it together with the model.
   accuracy:
     name: Accuracy
     runs-on: ubuntu-latest
@@ -74,4 +75,4 @@ jobs:
         run: timeout 120 bash -c 'until curl -sf "$WORDNET_URL/health" > /dev/null; do sleep 2; done'
 
       - name: Benchmark the held-out slice
-        run: uv run python -m wsd.benchmark --split eval --min-accuracy 0.759
+        run: uv run python -m wsd.benchmark --split eval --min-accuracy 0.757

@@ -66,7 +66,7 @@ def load_model(model_name: str | None = None) -> ModelComponents:
     # matches the dtype training uses, so inference doesn't incur a numeric
     # mismatch versus the trained weights. Fall back to fp16 on older GPUs.
     # Elsewhere use fp32 explicitly: with dtype=None, transformers 5 loads the checkpoint's own dtype (bf16 for
-    # the published models), and CPUs without native bf16 (e.g. AVX2-only) emulate it, 3-30x slower.
+    # the published models), and CPUs without native bf16 (e.g. AVX2-only) emulate it, 3-8x slower than fp32.
     if device == "cuda":
         dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
     else:

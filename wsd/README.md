@@ -124,6 +124,10 @@ never trained on). Trained on 8xH100 via `training/sweep.py`; configs in `traini
 | **Ettin-150m distilled from the 1B on labeled data + 1.06M unlabeled Wikipedia prompts, alpha 0.7, 3 epochs (U8; `sign/Ettin-150m-WSD`, the default; 0.44x the cost)** | **75.9%** | **80.8%** |
 | Ettin-68m / 32m / 17m, distilled from the 1B, 3 epochs (S6 / S4 / S2)  | 71.5 / 66.0 / 60.7% | 78.9 / 75.2 / 73.1% |
 
+Accuracy is measured on GPUs in bf16. On the CPU the model runs in fp32 (`load_model`: CPUs without native bf16
+emulate it, up to ~8x slower), which moves a few close calls: `sign/Ettin-150m-WSD` scores 75.78% on the held-out
+slice in fp32 vs 75.9% in bf16. CI checks the fp32 number (`--min-accuracy 0.757`, `.github/workflows/test.yaml`).
+
 Recipe for W4: `--wn-train --semcor SemCor/semcor --wngt glosstag --wngt-tags man --sense-index dict/index.sense
 --lr-scheduler cosine --label-smoothing 0.1 --weight-decay 0.01 --learning-rate 3e-5 --num-epochs 2 --batch-size 64`.
 The gloss corpus adds ~0.5 points on both benchmarks; its variants (definitions only, all tags, lr 2e-5/4e-5)
