@@ -13,6 +13,17 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
 
+    # Tests need a WordNet API. Repositories that set the WORDNET_URL variable use that server; anywhere else
+    # (e.g. forks) the public API image runs as a service container. An empty image skips the service.
+    services:
+      wordnet:
+        image: ${{ vars.WORDNET_URL == '' && 'ghcr.io/sign/wn:latest' || '' }}
+        ports:
+          - 8000:8080
+
+    env:
+      WORDNET_URL: ${{ vars.WORDNET_URL || 'http://127.0.0.1:8000' }}
+
     steps:
       - uses: actions/checkout@v6
 
@@ -26,7 +37,8 @@ jobs:
       - name: Install dependencies
         run: uv pip install ".[dev,web]"
 
+      - name: Wait for the WordNet API
+        run: timeout 120 bash -c 'until curl -sf "$WORDNET_URL/health" > /dev/null; do sleep 2; done'
+
       - name: Test Code
         run: uv run pytest -n auto --dist loadscope
-        env:
-          WORDNET_URL: ${{ vars.WORDNET_URL }}
