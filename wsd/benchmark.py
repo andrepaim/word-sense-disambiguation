@@ -164,6 +164,8 @@ def main():
     parser.add_argument("--raganato", type=str,
                         help="evaluate a Raganato-format set instead of WordNet examples (prefix of .data.xml)")
     parser.add_argument("--sense-index", type=str, help="WordNet 3.0 index.sense (required with --raganato)")
+    parser.add_argument("--min-accuracy", type=float,
+                        help="exit with status 1 when accuracy is below this fraction (CI regression check)")
     args, _ = parser.parse_known_args()  # tolerate the launcher's --nodes
 
     if args.raganato:
@@ -207,8 +209,11 @@ def main():
     else:
         correct, total, seconds = evaluate(examples, args.batch_size, args.failures)
 
-    print(f"split={args.split} n={total} accuracy={correct / max(total, 1):.4f} "
+    accuracy = correct / max(total, 1)
+    print(f"split={args.split} n={total} accuracy={accuracy:.4f} "
           f"time={seconds:.0f}s ({total / max(seconds, 1e-9):.0f} examples/s over {world} GPU(s))")
+    if args.min_accuracy is not None and accuracy < args.min_accuracy:
+        raise SystemExit(f"accuracy {accuracy:.4f} is below the required {args.min_accuracy:.4f}")
 
 
 if __name__ == "__main__":
