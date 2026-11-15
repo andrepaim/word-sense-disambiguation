@@ -35,7 +35,7 @@ jobs:
           activate-environment: true
 
       - name: Install dependencies
-        run: uv pip install ".[dev,web]"
+        run: uv pip install ".[dev,web,benchmark]"  # benchmark: wn, imported by training.train via wsd.benchmark
 
       - name: Wait for the WordNet API
         run: timeout 120 bash -c 'until curl -sf "$WORDNET_URL/health" > /dev/null; do sleep 2; done'

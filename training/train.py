@@ -497,7 +497,7 @@ def main(argv: list[str] | None = None):
     # non-mask positions (avg prompt length ~150, one mask per prompt).
     # Inference uses a parallel path via ``prediction_positions`` in model.py.
     model.sparse_prediction = True
-    model.args.label_smoothing = args.label_smoothing  # applied in WSDModernBertForMaskedLM.forward
+    model.config.label_smoothing = args.label_smoothing  # applied in WSDModernBertForMaskedLM.forward
 
     # If we loaded a pristine checkpoint the decoder is still full-vocab; prune
     # it down to the 128 answer-letter rows. When resuming from a previously
@@ -512,7 +512,7 @@ def main(argv: list[str] | None = None):
     else:
         print(f"Loaded pre-pruned checkpoint with {len(letter_set.letters)} output tokens")
 
-    print(f"Model dtype: {model.dtype}, attention: {model.args._attn_implementation}")
+    print(f"Model dtype: {model.dtype}, attention: {model.config._attn_implementation}")
 
     training_examples, eval_examples = build_examples(args, tokenizer)
     train_dataset = WSDDataset(training_examples, tokenizer, letter_set, MAX_LENGTH)

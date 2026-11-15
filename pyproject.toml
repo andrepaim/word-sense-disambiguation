@@ -24,6 +24,7 @@ dev = [
     "requests-mock",
     "pytest",
     "pytest-xdist", # For parallel test execution
+    "accelerate", # transformers' Trainer, for wsd/test_train.py
 ]
 
 web = [
