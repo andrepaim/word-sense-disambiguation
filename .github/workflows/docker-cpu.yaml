@@ -2,7 +2,15 @@ name: CPU Docker platforms
 
 on:
   pull_request:
-    paths: [Dockerfile, .github/workflows/publish-docker.yaml, .github/workflows/docker-cpu.yaml]
+    # Everything the image is built from: a dependency or code change can break the build or its
+    # end-to-end check (wsd/prime.py), which otherwise first fails when a release is published.
+    paths:
+      - Dockerfile
+      - pyproject.toml
+      - "wsd/**"
+      - "!wsd/**/*.md"
+      - .github/workflows/publish-docker.yaml
+      - .github/workflows/docker-cpu.yaml
 
 permissions:
   contents: read
